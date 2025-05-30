@@ -56,23 +56,32 @@ The crypter operates through the following stages:
 -    <log_filename>: Path to the file where diagnostic logs will be written.
 
 
-## How it works
-**You need to craft a position independent shellcode and paste the bytes in the shellcode array. With the following features**
+## How It Works
+This crypter embeds a position-independent shellcode that runs first when the PE is executed. Here's the breakdown
 
-**API Resolution:**
--        It determines the base address of loaded modules (e.g., kernel32.dll) typically through the Process Environment Block (PEB).
--        It dynamically resolves the addresses of required API functions: LoadLibraryA and GetProcAddress.
--        Using these, it obtains the address of VirtualProtect, which is necessary for modifying memory permissions.
-**Metadata Retrieval:**
--        The LoaderMetadata structure is located immediately following the shellcode itself within the same memory section.
--        The shellcode calculates the address of this metadata based on its own current instruction pointer.
--        It reads the originalOepRva, decryptionKey, and the RVA and VirtualSize for the .text, .rdata, and .data sections.
-  **Section Decryption:**
--        For each section specified in the metadata:
--            The absolute virtual address of the section is calculated (ImageBase + Section RVA).
--            VirtualProtect is called to grant write permissions to the section's memory region (e.g., PAGE_EXECUTE_READWRITE or PAGE_READWRITE).
--            An in-memory XOR decryption is performed over the section's VirtualSize using the retrieved decryptionKey.
--            VirtualProtect is called again to restore appropriate memory permissions (e.g., PAGE_EXECUTE_READ for .text, PAGE_READONLY for .rdata).
-   **Execution Transfer:**
--        The absolute virtual address of the Original Entry Point is calculated (ImageBase + originalOepRva).
--        Control is transferred to this address, initiating the execution of the original application code.
+**API Resolution**
+    The shellcode starts by walking the PEB (Process Environment Block) to locate loaded modules like kernel32.dll.
+    It then dynamically resolves LoadLibraryA and GetProcAddress.
+    Using those, it locates VirtualProtect, which is essential for modifying memory protections at runtime.
+
+**Metadata Retrieval**
+    Right after the shellcode in memory lies a LoaderMetadata structure.
+    The shellcode calculates its own instruction pointer to locate this metadata.
+    It extracts:
+        originalOepRva – Offset of the original entry point.
+        decryptionKey – Used for XOR decryption.
+        RVA and size info for .text, .rdata, and .data sections.
+
+**Section Decryption**
+    For each encrypted section:
+        Calculates its virtual address: ImageBase + SectionRVA.
+        Calls VirtualProtect to make the section writable.
+        Decrypts it in-place using XOR with decryptionKey.
+        Restores original memory protections:
+            .text → PAGE_EXECUTE_READ
+            .rdata → PAGE_READONLY
+            .data → PAGE_READWRITE
+
+**Execution Transfer**
+    Computes the address of the original entry point: ImageBase + originalOepRva.
+    Jumps to it, resuming execution of the original (now decrypted) PE.
