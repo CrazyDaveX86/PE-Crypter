@@ -57,7 +57,7 @@ The crypter operates through the following stages:
 
 
 ## How It Works
-This crypter embeds a position-independent shellcode that runs first when the PE is executed. Here's the breakdown
+You need to craft a position independent shellcode in x64 assembly that does the following things
 
 **API Resolution:**
 *    The shellcode starts by walking the PEB (Process Environment Block) to locate loaded modules like kernel32.dll.
