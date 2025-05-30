@@ -65,20 +65,20 @@ This crypter embeds a position-independent shellcode that runs first when the PE
 *    Using those, it locates VirtualProtect, which is essential for modifying memory protections at runtime.
 
 **Metadata Retrieval:**
-*    Right after the shellcode in memory lies a LoaderMetadata structure the shellcode calculates its own instruction pointer to locate this metadata. It extracts: 
-* * originalOepRva – Offset of the original entry point.
-* * decryptionKey – Used for XOR decryption.
-* * RVA and size info for .text, .rdata, and .data sections.
+Right after the shellcode in memory lies a LoaderMetadata structure the shellcode calculates its own instruction pointer to locate this metadata. It extracts: 
+*  originalOepRva – Offset of the original entry point.
+*  decryptionKey – Used for XOR decryption.
+*  RVA and size info for .text, .rdata, and .data sections.
 
 **Section Decryption:**
-*    For each encrypted section:
-*        Calculates its virtual address: ImageBase + SectionRVA.
-*        Calls VirtualProtect to make the section writable.
-*        Decrypts it in-place using XOR with decryptionKey.
-*        Restores original memory protections:
-*            .text → PAGE_EXECUTE_READ
-*            .rdata → PAGE_READONLY
-*            .data → PAGE_READWRITE
+For each encrypted section:
+* Calculates its virtual address: ImageBase + SectionRVA.
+* Calls VirtualProtect to make the section writable.
+* Decrypts it in-place using XOR with decryptionKey.
+* Restores original memory protections:
+* .text → PAGE_EXECUTE_READ
+* .rdata → PAGE_READONLY
+* .data → PAGE_READWRITE
 
 **Execution Transfer:**
     Computes the address of the original entry point: ImageBase + originalOepRva.
