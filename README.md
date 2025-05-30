@@ -59,12 +59,12 @@ The crypter operates through the following stages:
 ## How It Works
 This crypter embeds a position-independent shellcode that runs first when the PE is executed. Here's the breakdown
 
-**API Resolution**
+**API Resolution:**
     The shellcode starts by walking the PEB (Process Environment Block) to locate loaded modules like kernel32.dll.
     It then dynamically resolves LoadLibraryA and GetProcAddress.
     Using those, it locates VirtualProtect, which is essential for modifying memory protections at runtime.
 
-**Metadata Retrieval**
+**Metadata Retrieval:**
     Right after the shellcode in memory lies a LoaderMetadata structure.
     The shellcode calculates its own instruction pointer to locate this metadata.
     It extracts:
@@ -72,7 +72,7 @@ This crypter embeds a position-independent shellcode that runs first when the PE
         decryptionKey – Used for XOR decryption.
         RVA and size info for .text, .rdata, and .data sections.
 
-**Section Decryption**
+**Section Decryption:**
     For each encrypted section:
         Calculates its virtual address: ImageBase + SectionRVA.
         Calls VirtualProtect to make the section writable.
@@ -82,6 +82,6 @@ This crypter embeds a position-independent shellcode that runs first when the PE
             .rdata → PAGE_READONLY
             .data → PAGE_READWRITE
 
-**Execution Transfer**
+**Execution Transfer:**
     Computes the address of the original entry point: ImageBase + originalOepRva.
     Jumps to it, resuming execution of the original (now decrypted) PE.
